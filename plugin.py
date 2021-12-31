@@ -42,13 +42,13 @@ def onHeartbeat():
             Domoticz.Log("TEMPNU Heartbeat")
         try:
             url = "https://www.temperatur.nu/termo/gettemp.php?stadname=" + Parameters["Mode2"] + "&what=temp"
-            response = requests.get(url)
-            value = round(float(response.content.decode('latin')), 1)
-            Domoticz.Log("TEMPNU temp: " + str(value))
-            Devices[1].Update(nValue=1, sValue=str(value))
+            response = requests.get(url).content.decode('latin')
+            value = str(round(float(response), 1))
+            Devices[1].Update(nValue=1, sValue=value)
+            Domoticz.Log("TEMPNU temperature at " + Parameters["Mode2"] + ": " + value)
         except:
             Domoticz.Log("TEMPNU Failed to get data")
-            Domoticz.Log("TEMPNU Server response: " + response.content.decode('latin'))
+            Domoticz.Log("TEMPNU Server response: " + str(response))
     
     heartbeat_count += 1
 
