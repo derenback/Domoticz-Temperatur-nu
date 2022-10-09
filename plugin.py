@@ -4,9 +4,18 @@ Temperature from Temperature.nu for Domoticz
 Author: Derenback
 """
 """
-<plugin key="TEMPNU" name="Temperature.nu" version="0.0.2" author="Derenback">
+<plugin key="TEMPNU" name="Temperature.nu" version="0.0.3" author="Derenback">
+    <description>
+        <h2>Temperature.nu plugin</h2><br/>
+        <h3>Locations</h3><br/>
+        Add locations separated by a comma ",".<br/>
+        Ex. "mosas,salen_by"<br/>
+        A list of locations can be found here: <A Href="https://www.temperatur.nu/matplatser" Target="_blank">www.temperatur.nu/matplatser</A><br/>
+        Note that adding many locations might violate the terms.<br/>
+        Read more here: <A Href="https://www.temperatur.nu/info/api/#Villkor" Target="_blank">www.temperatur.nu/info/api/#Villkor</A><br/>
+    </description>
     <params>
-        <param field="Mode2" label="Location" width="300px" required="true" default="" />
+        <param field="Mode2" label="Locations" width="300px" required="true" default="" />
         <param field="Mode4" label="Debug" width="75px">
             <options>
                 <option label="On" value="Debug"/>
@@ -27,10 +36,12 @@ class BasePlugin:
 
         if (Parameters["Mode4"] == "Debug"):
             Domoticz.Log("TEMPNU Debug is On")
-        
-        if 1 not in Devices:
-            if Parameters["Mode2"] != "":
-                Domoticz.Device(Name=Parameters["Mode2"], Unit=1, Type=80, Subtype=5, Used=1).Create()
+
+        locations = Parameters["Mode2"].split(",")
+        for index, location in enumerate(locations):
+            index = index + 1 #Keep start index at 1 for backwards compatibility
+            if index not in Devices:
+                Domoticz.Device(Name=location, Unit=index, Type=80, Subtype=5, Used=1).Create()
 
         # Just keeping the plugin alive. 
         Domoticz.Heartbeat(5) 
@@ -43,16 +54,19 @@ class BasePlugin:
         if (Parameters["Mode4"] == "Debug"):
             Domoticz.Log("TEMPNU Heartbeat")
         # Heartbeat 5 s and update every 60 times give update interval of 5 min.
-        if self.heartbeat_count % 60 == 0: 
-            try:
-                url = "https://www.temperatur.nu/termo/gettemp.php?stadname=" + Parameters["Mode2"].strip() + "&what=temp"
-                response = requests.get(url).content.decode('latin')
-                value = str(round(float(response), 1))
-                Devices[1].Update(nValue=1, sValue=value)
-                Domoticz.Log("TEMPNU temperature at " + Parameters["Mode2"] + ": " + value)
-            except:
-                Domoticz.Log("TEMPNU Failed to get data")
-                Domoticz.Log("TEMPNU Server response: " + str(response))
+        if self.heartbeat_count % 60 == 0:
+            locations = Parameters["Mode2"].split(",")
+            for index, location in enumerate(locations):
+                index = index + 1 #Keep start index at 1 for backwards compatibility 
+                try:
+                    url = "https://www.temperatur.nu/termo/gettemp.php?stadname=" + location.strip() + "&what=temp"
+                    response = requests.get(url).content.decode('latin')
+                    value = str(round(float(response), 1))
+                    Devices[index].Update(nValue=1, sValue=value)
+                    Domoticz.Log("TEMPNU temperature at " + location.strip() + ": " + value)
+                except:
+                    Domoticz.Log("TEMPNU Failed to get data fir location: " + location)
+                    Domoticz.Log("TEMPNU Server response: " + str(response))
         
         self.heartbeat_count += 1
         
