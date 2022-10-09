@@ -12,7 +12,7 @@ Author: Derenback
         Ex. "mosas,salen_by"<br/>
         A list of locations can be found here: <A Href="https://www.temperatur.nu/matplatser" Target="_blank">www.temperatur.nu/matplatser</A><br/>
         Note that adding many locations might violate the terms.<br/>
-        Read more here: <A Href="https://www.temperatur.nu/info/api/#Villkor" Target="_blank">www.temperatur.nu/info/api/#Villkor</A><br/>
+        Read more here: <A Href="https://www.temperatur.nu/" Target="_blank">www.temperatur.nu/</A><br/>
     </description>
     <params>
         <param field="Mode2" label="Locations" width="300px" required="true" default="" />
