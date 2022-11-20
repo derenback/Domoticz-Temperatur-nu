@@ -30,6 +30,7 @@ import requests
 
 class BasePlugin:
     heartbeat_count = 0
+    locations = []
 
     def onStart(self):
         Domoticz.Log("Domoticz Temperature from Temperature.nu started")
@@ -37,9 +38,8 @@ class BasePlugin:
         if (Parameters["Mode4"] == "Debug"):
             Domoticz.Log("TEMPNU Debug is On")
 
-        locations = Parameters["Mode2"].split(",")
-        for index, location in enumerate(locations):
-            index = index + 1 #Keep start index at 1 for backwards compatibility
+        self.locations = Parameters["Mode2"].split(",")
+        for index, location in enumerate(self.locations, start=1):
             if index not in Devices:
                 Domoticz.Device(Name=location, Unit=index, Type=80, Subtype=5, Used=1).Create()
 
@@ -55,18 +55,17 @@ class BasePlugin:
             Domoticz.Log("TEMPNU Heartbeat")
         # Heartbeat 5 s and update every 60 times give update interval of 5 min.
         if self.heartbeat_count % 60 == 0:
-            locations = Parameters["Mode2"].split(",")
-            for index, location in enumerate(locations):
-                index = index + 1 #Keep start index at 1 for backwards compatibility 
+            for index, location in enumerate(self.locations, start=1):
                 try:
                     url = "https://www.temperatur.nu/termo/gettemp.php?stadname=" + location.strip() + "&what=temp"
                     response = requests.get(url).content.decode('latin')
                     value = str(round(float(response), 1))
                     Devices[index].Update(nValue=1, sValue=value)
-                    Domoticz.Log("TEMPNU temperature at " + location.strip() + ": " + value)
+                    if (Parameters["Mode4"] == "Debug"):
+                        Domoticz.Log(f"TEMPNU Temperature at {location.strip()} is {value} C°")
                 except:
-                    Domoticz.Log("TEMPNU Failed to get data fir location: " + location)
-                    Domoticz.Log("TEMPNU Server response: " + str(response))
+                    Domoticz.Log(f"TEMPNU Failed to get data for location {location}")
+                    Domoticz.Log(f"TEMPNU Server response: {str(response)}")
         
         self.heartbeat_count += 1
         
