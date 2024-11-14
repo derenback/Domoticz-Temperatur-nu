@@ -18,5 +18,5 @@ sudo systemctl restart domoticz
 ```
 
 ## Tested on
-- Domoticz version: 2020.2 (build 11997)
+- Domoticz version: 2024.7
 
