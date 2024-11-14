@@ -33,12 +33,16 @@ class BasePlugin:
     locations = []
 
     def onStart(self):
+        global locations
         Domoticz.Log("Domoticz Temperature from Temperature.nu started")
+
+        for location in Parameters["Mode2"].split(","):
+            self.locations.append(location.strip())
 
         if (Parameters["Mode4"] == "Debug"):
             Domoticz.Log("TEMPNU Debug is On")
+            Domoticz.Log(f"TEMPNU Locations: {str(self.locations)}")
 
-        self.locations = Parameters["Mode2"].split(",")
         for index, location in enumerate(self.locations, start=1):
             if index not in Devices:
                 Domoticz.Device(Name=location, Unit=index, Type=80, Subtype=5, Used=1).Create()
@@ -57,12 +61,12 @@ class BasePlugin:
         if self.heartbeat_count % 60 == 0:
             for index, location in enumerate(self.locations, start=1):
                 try:
-                    url = "https://www.temperatur.nu/termo/gettemp.php?stadname=" + location.strip() + "&what=temp"
+                    url = f"https://www.temperatur.nu/termo/gettemp.php?stadname={location}&what=temp"
                     response = requests.get(url).content.decode('latin')
-                    value = str(round(float(response), 1))
+                    value = f"{round(float(response), 1)}"
                     Devices[index].Update(nValue=1, sValue=value)
                     if (Parameters["Mode4"] == "Debug"):
-                        Domoticz.Log(f"TEMPNU Temperature at {location.strip()} is {value} C°")
+                        Domoticz.Log(f"TEMPNU Temperature at {location} is {value} C°")
                 except:
                     Domoticz.Log(f"TEMPNU Failed to get data for location {location}")
                     Domoticz.Log(f"TEMPNU Server response: {str(response)}")
