@@ -33,11 +33,12 @@ class BasePlugin:
     locations = []
 
     def onStart(self):
-        global locations
         Domoticz.Log("Domoticz Temperature from Temperature.nu started")
 
         for location in Parameters["Mode2"].split(","):
-            self.locations.append(location.strip())
+            location = location.strip()
+            if location:  # Skip empty locations
+                self.locations.append(location)
 
         if (Parameters["Mode4"] == "Debug"):
             Domoticz.Log("TEMPNU Debug is On")
@@ -54,22 +55,27 @@ class BasePlugin:
         Domoticz.Log("TEMPNU Stopped")
 
     def onHeartbeat(self):
-        global heartbeat_count
         if (Parameters["Mode4"] == "Debug"):
             Domoticz.Log("TEMPNU Heartbeat")
         # Heartbeat 5 s and update every 60 times give update interval of 5 min.
         if self.heartbeat_count % 60 == 0:
             for index, location in enumerate(self.locations, start=1):
+                response = None
                 try:
                     url = f"https://www.temperatur.nu/termo/gettemp.php?stadname={location}&what=temp"
-                    response = requests.get(url).content.decode('latin')
+                    response = requests.get(url, timeout=10).content.decode('latin')
                     value = f"{round(float(response), 1)}"
                     Devices[index].Update(nValue=1, sValue=value)
                     if (Parameters["Mode4"] == "Debug"):
                         Domoticz.Log(f"TEMPNU Temperature at {location} is {value} C°")
-                except:
-                    Domoticz.Log(f"TEMPNU Failed to get data for location {location}")
-                    Domoticz.Log(f"TEMPNU Server response: {str(response)}")
+                except requests.exceptions.Timeout:
+                    Domoticz.Error(f"TEMPNU Timeout getting data for location {location}")
+                except requests.exceptions.RequestException as e:
+                    Domoticz.Error(f"TEMPNU Network error for location {location}: {e}")
+                except ValueError:
+                    Domoticz.Error(f"TEMPNU Invalid temperature value for {location}: {response}")
+                except Exception as e:
+                    Domoticz.Error(f"TEMPNU Unexpected error for location {location}: {e}")
         
         self.heartbeat_count += 1
         
